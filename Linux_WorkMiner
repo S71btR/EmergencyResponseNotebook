@@ -1,0 +1,54 @@
+#!/bin/bash
+
+ipaddress=`ifconfig -a|grep inet|grep -v 127.0.0.1|grep -v inet6|awk '{print $2}'|tr -d "addr:"`
+echo "当前主机IP地址为:$ipaddress"
+
+cron_array=(/etc/crontab /var/spool/cron/crontabs/root);
+Name_array=(work32 work64 xmr secure.sh auth.sh python);
+Path_array=(/tmp/.work/work32 /tmp/.work/work64 /tmp/xmr /tmp/config.json /tmp/secure.sh /tmp/auth.sh /usr/.work/work32 /usr/.work/work64 /usr/xmr /usr/auth.sh /usr/secure.sh);
+bash_array=(/usr/bin/curl1 /usr/bin/wget1)
+
+echo "开始检查任务计划..."
+for((i=0;i<${#cron_array[@]};i++))do
+	if [ `grep -c ".work" ${cron_array[i]}` -ne '0' ];then
+		echo "${cron_array[i]} 存在异常，修复中..."
+		cat ${cron_array[i]} | grep -v "/.work/work32" | grep -v "/.work/work64" > ${cron_array[i]}.bak && mv ${cron_array[i]}.bak ${cron_array[i]}
+	else
+		echo "${cron_array[i]}无异常"
+
+	fi
+done
+
+
+echo "开始检查进程..."
+for((i=0;i<${#Name_array[@]};i++))do
+	count=`ps -ef |grep ${Name_array[i]} |grep -v grep |wc -l`
+	if [ $count -le 0 ];then
+		echo "${Name_array[i]} 进程不存在"
+	else
+		echo "${Name_array[i]} 存在，正在结束..."
+ 		ps -ef |grep ${Name_array[i]}|grep -v grep |awk {'print $2'}|xargs kill -9		
+	fi
+
+done
+
+echo "开始检查文件..."
+for((i=0;i<${#Path_array[@]};i++))do
+	if [ ! -f "${Path_array[i]}" ];then
+		echo "${Path_array[i]} 不存在"
+	else
+		rm -rf ${Path_array[i]}
+		echo "${Path_array[i]} 存在，正在删除..."
+	fi
+done
+
+echo "开始检查系统命令 ..."
+for((i=0;i<${#bash_array[@]};i++))do
+	if [  -f "${bash_array[i]}" ];then
+		echo "发现被替换文件，修复中..."
+		mv /usr/bin/curl1 /usr/bin/url
+		mv /usr/bin/wget1 /usr/bin/wget
+	else
+		echo "系统命令无异常"
+	fi
+done
